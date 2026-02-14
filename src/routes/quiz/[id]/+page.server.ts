@@ -1,6 +1,6 @@
 // src/routes/quiz/[id]/+page.server.js
 import { error, fail } from '@sveltejs/kit';
-import { RESEND_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 export async function load({ params, platform }) {
     const quizId = params.id;
@@ -109,7 +109,7 @@ export const actions = {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${RESEND_API_KEY}`
+                            'Authorization': `Bearer ${env.RESEND_API_KEY}`
                         },
                         body: JSON.stringify({
                             from: 'onboarding@resend.dev', // Use your verified domain here later
