@@ -51,13 +51,13 @@
                 <h5 class="mb-3">Volunteer Details</h5>
                 
                 <div class="mb-3">
-                    <label class="form-label">Full Name *</label>
-                    <input type="text" class="form-control form-control-lg" bind:value={volunteerName} placeholder="e.g. Jane Doe" required>
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-control form-control-lg" bind:value={volunteerName} placeholder="Randy McRescue" required>
                 </div>
                 
                 <div class="mb-4">
-                    <label class="form-label">Brigade / Badge ID (Optional)</label>
-                    <input type="text" class="form-control" bind:value={brigadeId} placeholder="e.g. 1042">
+                    <label class="form-label">FENZ ID</label>
+                    <input type="text" class="form-control" bind:value={brigadeId} placeholder="876543" required>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center">
