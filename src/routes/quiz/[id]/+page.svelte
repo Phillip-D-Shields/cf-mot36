@@ -116,9 +116,6 @@
 						<h5 class="mb-4">
 							<span class="badge bg-secondary me-2">{index + 1}</span>
 							{q.text}
-							{#if q.type === 'multi_choice'}
-								<span class="text-muted small ms-2 fw-normal">(Select all that apply)</span>
-							{/if}
 						</h5>
 
 						<div class="ms-3">
