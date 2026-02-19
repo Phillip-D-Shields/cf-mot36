@@ -1,6 +1,7 @@
 // src/routes/quiz/[id]/+page.server.js
 import { error, fail } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { Resend } from 'resend';
 
 export async function load({ params, platform }) {
     const quizId = params.id;
@@ -24,7 +25,7 @@ export async function load({ params, platform }) {
             id: q.id.toString(),
             text: q.question_text,
             type: q.question_type,
-            options: JSON.parse(q.options)  
+            options: JSON.parse(q.options)
         }));
 
         return { quiz, questions };
@@ -38,7 +39,7 @@ export const actions = {
     submit: async ({ request, params, platform }) => {
         const quizId = params.id;
         const formData = await request.formData();
-        
+
         const volunteer_name = formData.get('volunteer_name');
         const brigade_id = formData.get('brigade_id') || 'N/A';
         const answersRaw = formData.get('answers_json');
@@ -72,7 +73,7 @@ export const actions = {
 
             // 3. Calculate Score & Pass/Fail
             const score = Math.round((correctCount / totalQuestions) * 100);
-            
+
             // Get pass threshold
             const quizMeta = await platform?.env.DB.prepare("SELECT pass_threshold FROM quizzes WHERE id = ?").bind(quizId).first();
             const passed = score >= quizMeta.pass_threshold ? 1 : 0;
@@ -82,53 +83,45 @@ export const actions = {
                 `INSERT INTO submissions (quiz_id, volunteer_name, brigade_id, score, passed, answers_log) 
                  VALUES (?, ?, ?, ?, ?, ?)`
             ).bind(
-                quizId, 
-                volunteer_name, 
-                brigade_id, 
-                score, 
-                passed, 
+                quizId,
+                volunteer_name,
+                brigade_id,
+                score,
+                passed,
                 JSON.stringify(userAnswers)
             ).run();
 
-            const adminEmail = "trainingofficer@yourbrigade.org"; // Replace with real email
-            
+            const adminEmails = ["matua.phillip.shields@gmail.com", "kyle.silcock@fireandemergency.nz"]; 
+            const RESEND_API_KEY = env.RESEND_API_KEY; // Make sure to set this in your environment variables
             const emailHtml = `
                 <h2>New Certification Submitted</h2>
                 <p><strong>Volunteer:</strong> ${volunteer_name} (ID: ${brigade_id})</p>
                 <p><strong>Score:</strong> ${score}%</p>
                 <p><strong>Result:</strong> ${passed === 1 ? '✅ PASSED' : '❌ FAILED'}</p>
                 <br/>
-                <p><a href="https://your-app-url.com/admin/submissions">View all submissions here</a></p>
+                <p><a href="http://cf-mot35.pages.dev/admin/submissions">View all submissions here</a></p>
             `;
+            const resend = new Resend(RESEND_API_KEY);
 
             // We wrap this in its own try/catch so an email failure 
             // doesn't crash the user's successful submission
             try {
-                if (RESEND_API_KEY) {
-                    await fetch('https://api.resend.com/emails', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${env.RESEND_API_KEY}`
-                        },
-                        body: JSON.stringify({
-                            from: 'onboarding@resend.dev', // Use your verified domain here later
-                            to: adminEmail,
-                            subject: `Quiz Result: ${volunteer_name} (${score}%)`,
-                            html: emailHtml
-                        })
-                    });
-                } else {
-                    console.warn("No Resend API Key found. Email not sent.");
-                }
+                resend.emails.send({
+                    from: 'brigade@digiwha-labs.com',
+                    to: adminEmails,
+                    subject: `New Certification Submission: ${volunteer_name} - ${score}%`,
+                    html: emailHtml
+                }).then(() => {
+                    console.log("Notification email sent successfully");
+                })
             } catch (emailErr) {
                 console.error("Failed to send email:", emailErr);
             }
             // --- END NEW CODE ---
 
-            return { 
-                success: true, 
-                score, 
+            return {
+                success: true,
+                score,
                 passed: passed === 1,
                 threshold: quizMeta?.pass_threshold || 0
             };
