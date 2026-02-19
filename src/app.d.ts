@@ -5,6 +5,12 @@ declare global {
         interface Platform {
             env: {
                 DB: D1Database,
+                SEB: {
+					send: (message: any) => Promise<void>;
+				};
+            }
+            context: {
+                waitUntil(promise: Promise<any>): void;
             }
             cf: CfProperties
             ctx: ExecutionContext
