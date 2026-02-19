@@ -99,7 +99,7 @@ export const actions = {
                 <p><strong>Score:</strong> ${score}%</p>
                 <p><strong>Result:</strong> ${passed === 1 ? '✅ PASSED' : '❌ FAILED'}</p>
                 <br/>
-                <p><a href="http://cf-mot35.pages.dev/admin/submissions">View all submissions here</a></p>
+                <p><a href="http://cf-mot36.pages.dev/admin/submissions">View all submissions here</a></p>
             `;
             const resend = new Resend(RESEND_API_KEY);
 
