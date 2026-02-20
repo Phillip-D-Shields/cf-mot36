@@ -1,8 +1,7 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
 
-    // Svelte 5 Runes State
-    // We define the entire form state here.
+    // We changed the correctAnswer type to `string | string[]` so Svelte allows arrays
     let formState = $state({
         title: '',
         description: '',
@@ -13,35 +12,43 @@
             text: string;
             type: string;
             options: Array<{ id: string; text: string }>;
-            correctAnswer: string;
+            correctAnswer: string | string[]; 
         }>
     });
 
-    // Helper to add a new question
     function addQuestion() {
         formState.questions.push({
-            id: crypto.randomUUID(), // Temporary ID for UI keys
+            id: crypto.randomUUID(), 
             text: '',
-            type: 'single_choice', // default
+            type: 'single_choice', 
             options: [{ id: 'opt1', text: '' }, { id: 'opt2', text: '' }],
-            correctAnswer: 'opt1' // Default to first option
+            correctAnswer: 'opt1' 
         });
     }
 
-    // Helper to remove a question
     function removeQuestion(index) {
         formState.questions.splice(index, 1);
     }
 
-    // Helper to add an option to a specific question
     function addOption(questionIndex) {
         const id = 'opt' + Math.random().toString(36).substr(2, 5);
         formState.questions[questionIndex].options.push({ id, text: '' });
     }
 
-    // Helper to remove an option
     function removeOption(qIndex, oIndex) {
         formState.questions[qIndex].options.splice(oIndex, 1);
+    }
+
+    // NEW: Automatically switch correctAnswer between a string and an array 
+    // depending on the type of question selected.
+    function handleTypeChange(question) {
+        if (question.type === 'multi_choice') {
+            question.correctAnswer = []; // Checkboxes need an array
+        } else if (question.type === 'true_false') {
+            question.correctAnswer = 'true';
+        } else {
+            question.correctAnswer = question.options[0]?.id || '';
+        }
     }
 </script>
 
@@ -96,7 +103,7 @@
 
                     <div class="mb-3">
                         <label class="form-label small text-muted">Type</label>
-                        <select class="form-select form-select-sm w-auto" bind:value={question.type}>
+                        <select class="form-select form-select-sm w-auto" bind:value={question.type} onchange={() => handleTypeChange(question)}>
                             <option value="single_choice">Multiple Choice (Single Answer)</option>
                             <option value="multi_choice">Multiple Choice (Multiple Answers)</option>
                             <option value="true_false">True / False</option>
@@ -120,7 +127,7 @@
                                         {#if question.type === 'single_choice'}
                                             <input class="form-check-input mt-0" type="radio" name={'correct_'+qIndex} value={option.id} bind:group={question.correctAnswer}>
                                         {:else}
-                                            <input class="form-check-input mt-0" type="checkbox"> 
+                                            <input class="form-check-input mt-0" type="checkbox" value={option.id} bind:group={question.correctAnswer}> 
                                         {/if}
                                     </div>
                                     <input type="text" class="form-control" placeholder="Option text" bind:value={option.text}>
