@@ -20,15 +20,6 @@
 			"database_name": "cf-mot36-db",
 			"database_id": "94c90fa9-ec37-4e07-b031-cd19e1fc81d4"
 		}
-	],
-	"send_email": [
-		{
-			"name": "SEB",
-			"allowed_destination_addresses": [
-				"matua.phillip.shields@gmail.com",
-				"phillip.shields@pm.me"
-			]
-		}
 	]
 	/**
 	 * Smart Placement
