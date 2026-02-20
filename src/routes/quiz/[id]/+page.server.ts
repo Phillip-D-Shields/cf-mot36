@@ -101,7 +101,7 @@ export const actions = {
             try {
                 await resend.emails.send({
                     from: 'brigade@digiwha-labs.com',
-                    to: ["matua.phillip.shields@gmail.com"],
+                    to: ["matua.phillip.shields@gmail.com", "jess.nelipovich@gmail.com", "k_silcock@hotmail.com"],
                     subject: `New Certification Submission: ${volunteer_name} - ${score}%`,
                     html: generateEmailHtml(volunteer_name, brigade_id, score, passed === 1)
                 });
