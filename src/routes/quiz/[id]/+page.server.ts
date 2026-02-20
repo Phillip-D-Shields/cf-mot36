@@ -11,15 +11,51 @@ const arraysMatch = (arr1: any[], arr2: any[]) => {
     return arr1.every(val => arr2.includes(val));
 };
 
+// Helper: Translate answer IDs to readable text
+const getAnswerText = (answer: any, type: string, optionsJson: string | null) => {
+    if (type === 'true_false') return String(answer);
+    if (!optionsJson) return String(answer);
+    
+    try {
+        const options = JSON.parse(optionsJson);
+        if (Array.isArray(answer)) {
+            return answer.map(id => options.find((o: any) => o.id === id)?.text || id).join(', ');
+        }
+        return options.find((o: any) => o.id === answer)?.text || answer;
+    } catch {
+        return String(answer);
+    }
+};
+
 // Helper: Generate Email HTML
-const generateEmailHtml = (name: string, brigadeId: string, score: number, passed: boolean) => `
-    <h2>New Certification Submitted</h2>
-    <p><strong>Volunteer:</strong> ${name} (ID: ${brigadeId})</p>
-    <p><strong>Score:</strong> ${score}%</p>
-    <p><strong>Result:</strong> ${passed ? '✅ PASSED' : '❌ FAILED'}</p>
-    <br/>
-    <p><a href="http://cf-mot36.pages.dev/admin/submissions">View all submissions here</a></p>
-`;
+const generateEmailHtml = (name: string, brigadeId: string, score: number, passed: boolean, gradedAnswers: any[]) => {
+    let html = `
+        <h2>New Certification Submitted</h2>
+        <p><strong>Volunteer:</strong> ${name} (ID: ${brigadeId})</p>
+        <p><strong>Score:</strong> ${score}%</p>
+        <p><strong>Result:</strong> ${passed ? '✅ PASSED' : '❌ FAILED'}</p>
+        <hr />
+        <h3>Submission Details:</h3>
+        <ul style="list-style-type: none; padding-left: 0;">
+    `;
+
+    gradedAnswers.forEach(ans => {
+        html += `
+            <li style="margin-bottom: 15px; padding: 10px; background-color: ${ans.isCorrect ? '#f0fdf4' : '#fef2f2'}; border-left: 4px solid ${ans.isCorrect ? '#22c55e' : '#ef4444'};">
+                <strong>Q: ${ans.question}</strong><br/>
+                Your Answer: ${ans.userAnswer} ${ans.isCorrect ? '✅' : '❌'}<br/>
+                ${!ans.isCorrect ? `<em style="color: #666;">Correct Answer: ${ans.correctAnswer}</em>` : ''}
+            </li>
+        `;
+    });
+
+    html += `
+        </ul>
+        <br/>
+        <p><a href="http://cf-mot36.pages.dev/admin/submissions">View all submissions here</a></p>
+    `;
+    return html;
+};
 
 export async function load({ params, platform }) {
     const quizId = params.id;
@@ -67,47 +103,64 @@ export const actions = {
 
         try {
             // 1. Fetch correct answers & pass threshold concurrently
+            // UPDATE: We now fetch question_text and options as well to map the readable text
             const [correctAnswersResult, quizMeta] = await Promise.all([
-                platform?.env.DB.prepare("SELECT id, correct_answer FROM questions WHERE quiz_id = ?").bind(quizId).all(),
+                platform?.env.DB.prepare("SELECT id, question_text, question_type, options, correct_answer FROM questions WHERE quiz_id = ?").bind(quizId).all(),
                 platform?.env.DB.prepare("SELECT pass_threshold FROM quizzes WHERE id = ?").bind(quizId).first()
             ]);
 
-            // 2. Grade the test
+            // 2. Grade the test and log rich data
             let correctCount = 0;
             const totalQuestions = correctAnswersResult?.results.length || 0;
+            const gradedAnswers: any[] = [];
 
             correctAnswersResult?.results.forEach(q => {
-                const correctAnswer = JSON.parse(q.correct_answer as string);
-                const userAnswer = userAnswers[q.id.toString()];
+                const correctAnswerRaw = JSON.parse(q.correct_answer as string);
+                const userAnswerRaw = userAnswers[q.id.toString()];
 
-                if (Array.isArray(correctAnswer)) {
-                    if (arraysMatch(correctAnswer, userAnswer)) correctCount++;
-                } else if (userAnswer === correctAnswer) {
-                    correctCount++;
+                let isCorrect = false;
+                if (Array.isArray(correctAnswerRaw)) {
+                    if (arraysMatch(correctAnswerRaw, userAnswerRaw || [])) isCorrect = true;
+                } else if (userAnswerRaw === correctAnswerRaw) {
+                    isCorrect = true;
                 }
+
+                if (isCorrect) correctCount++;
+
+                // Build a readable log for this specific question
+                gradedAnswers.push({
+                    question: q.question_text,
+                    userAnswer: getAnswerText(userAnswerRaw, q.question_type as string, q.options as string) || 'No answer provided',
+                    correctAnswer: getAnswerText(correctAnswerRaw, q.question_type as string, q.options as string),
+                    isCorrect
+                });
             });
 
             // 3. Calculate Score
             const score = Math.round((correctCount / totalQuestions) * 100);
             const passed = score >= (quizMeta?.pass_threshold as number) ? 1 : 0;
 
-            // 4. Save Submission
+            // 4. Save Submission (Saving the detailed graded array instead of raw IDs)
+            const gradedAnswersJson = JSON.stringify(gradedAnswers);
             await platform?.env.DB.prepare(
                 `INSERT INTO submissions (quiz_id, volunteer_name, brigade_id, score, passed, answers_log) 
                  VALUES (?, ?, ?, ?, ?, ?)`
-            ).bind(quizId, volunteer_name, brigade_id, score, passed, answersRaw).run();
+            ).bind(quizId, volunteer_name, brigade_id, score, passed, gradedAnswersJson).run();
 
             // 5. Send Email Notification
             try {
                 await resend.emails.send({
                     from: 'brigade@digiwha-labs.com',
-                    to: ["matua.phillip.shields@gmail.com", "jess.nelipovich@gmail.com", "k_silcock@hotmail.com"],
+                    to: [
+                        "matua.phillip.shields@gmail.com",
+                        // "jess.nelipovich@gmail.com", 
+                        // "k_silcock@hotmail.com"
+                    ],
                     subject: `New Certification Submission: ${volunteer_name} - ${score}%`,
-                    html: generateEmailHtml(volunteer_name, brigade_id, score, passed === 1)
+                    html: generateEmailHtml(volunteer_name, brigade_id, score, passed === 1, gradedAnswers)
                 });
             } catch (emailErr) {
                 console.error("Failed to send email:", emailErr);
-                // We intentionally don't fail the form if the email fails
             }
 
             return {
