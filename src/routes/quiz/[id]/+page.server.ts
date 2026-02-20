@@ -8,20 +8,27 @@ const resend = new Resend(RESEND_API_KEY);
 // Helper: Compare arrays for multi-choice questions regardless of order
 const arraysMatch = (arr1: any[], arr2: any[]) => {
     if (!Array.isArray(arr1) || !Array.isArray(arr2) || arr1.length !== arr2.length) return false;
-    return arr1.every(val => arr2.includes(val));
+    // Map everything to strings so [1, 2] matches ["1", "2"]
+    const str1 = arr1.map(String);
+    const str2 = arr2.map(String);
+    return str1.every(val => str2.includes(val));
 };
 
-// Helper: Translate answer IDs to readable text
+// Helper: Translate answer IDs to readable text safely
 const getAnswerText = (answer: any, type: string, optionsJson: string | null) => {
     if (type === 'true_false') return String(answer);
     if (!optionsJson) return String(answer);
-    
+
     try {
         const options = JSON.parse(optionsJson);
-        if (Array.isArray(answer)) {
-            return answer.map(id => options.find((o: any) => o.id === id)?.text || id).join(', ');
-        }
-        return options.find((o: any) => o.id === answer)?.text || answer;
+        // Force the answer into an array so we can map it consistently
+        const answerArray = Array.isArray(answer) ? answer : [answer];
+
+        return answerArray.map(id => {
+            // Use String() to prevent number vs string equality failures
+            const option = options.find((o: any) => String(o.id) === String(id));
+            return option ? option.text : id;
+        }).join(', ');
     } catch {
         return String(answer);
     }
@@ -119,10 +126,16 @@ export const actions = {
                 const userAnswerRaw = userAnswers[q.id.toString()];
 
                 let isCorrect = false;
-                if (Array.isArray(correctAnswerRaw)) {
-                    if (arraysMatch(correctAnswerRaw, userAnswerRaw || [])) isCorrect = true;
-                } else if (userAnswerRaw === correctAnswerRaw) {
-                    isCorrect = true;
+
+                // If it's multi_choice, strictly enforce array comparison
+                if (q.question_type === 'multi_choice') {
+                    const correctArr = Array.isArray(correctAnswerRaw) ? correctAnswerRaw : [correctAnswerRaw];
+                    const userArr = Array.isArray(userAnswerRaw) ? userAnswerRaw : [userAnswerRaw].filter(Boolean);
+
+                    if (arraysMatch(correctArr, userArr)) isCorrect = true;
+                } else {
+                    // Single choice or true/false (compare as strings)
+                    if (String(userAnswerRaw) === String(correctAnswerRaw)) isCorrect = true;
                 }
 
                 if (isCorrect) correctCount++;
@@ -137,7 +150,7 @@ export const actions = {
             });
 
             // 3. Calculate Score
-            const score = Math.round((correctCount / totalQuestions) * 100);
+            const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
             const passed = score >= (quizMeta?.pass_threshold as number) ? 1 : 0;
 
             // 4. Save Submission (Saving the detailed graded array instead of raw IDs)
