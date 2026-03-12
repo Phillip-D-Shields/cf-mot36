@@ -10,17 +10,10 @@
 </script>
 
 <div class="container py-4">
-	<div class="d-flex justify-content-between align-items-center mb-4">
-		<div>
-			<h1 class="h3 mb-0">Brigade Admin</h1>
-			<p class="text-muted small">Certification Management Dashboard</p>
-		</div>
-		<a href="/admin/create" class="btn btn-primary"> + New Quiz </a>
-	</div>
 
 	<div class="row mb-4 text-center">
 		<div class="col-md-6 col-lg-3 mb-3 mb-lg-0">
-			<div class="card shadow-sm border-start border-primary border-4 h-100">
+			<div class="card shadow-sm border h-100">
 				<div class="card-body">
 					<h6 class="text-muted mb-2">Total Quizzes</h6>
 					<h3 class="mb-0">{stats.total}</h3>
@@ -28,7 +21,7 @@
 			</div>
 		</div>
 		<div class="col-md-6 col-lg-3 mb-3 mb-lg-0">
-			<div class="card shadow-sm border-start border-success border-4 h-100">
+			<div class="card shadow-sm border h-100">
 				<div class="card-body">
 					<h6 class="text-muted mb-2">Active Quizzes</h6>
 					<h3 class="mb-0">{stats.active}</h3>
@@ -37,7 +30,7 @@
 		</div>
 		<div class="col-md-12 col-lg-6 mt-3 mt-lg-0">
 			<div
-				class="card shadow-sm border-start border-info border-4 h-100 bg-info bg-opacity-10 hover-shadow transition-all"
+				class="card shadow-sm border h-100 hover-shadow transition-all"
 			>
 				<div class="card-body d-flex justify-content-around align-items-center">
 					<div>

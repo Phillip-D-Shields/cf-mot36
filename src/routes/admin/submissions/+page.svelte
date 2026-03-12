@@ -1,6 +1,24 @@
 <script lang="ts">
+    import { enhance } from '$app/forms';
+    
     let { data } = $props();
     let submissions = $derived(data.submissions || []);
+    
+    // Keep track of checked submission IDs
+    let selectedIds = $state<number[]>([]);
+    
+    // Automatically determine if "Select All" should be checked
+    let allSelected = $derived(
+        submissions.length > 0 && selectedIds.length === submissions.length
+    );
+
+    function toggleAll() {
+        if (allSelected) {
+            selectedIds = [];
+        } else {
+            selectedIds = submissions.map(s => s.id);
+        }
+    }
 
     function formatDate(dateString) {
         if (!dateString) return 'Unknown Date';
@@ -21,9 +39,20 @@
             <h1 class="h3 mb-0">Submission Records</h1>
             <p class="text-muted small">Review volunteer certification results</p>
         </div>
-        <a href="/admin" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Dashboard
-        </a>
+        
+        {#if selectedIds.length > 0}
+            <form method="POST" action="?/delete" use:enhance={() => {
+                return async ({ update }) => {
+                    await update();
+                    selectedIds = []; // Clear the selection after successful deletion
+                };
+            }}>
+                <input type="hidden" name="ids" value={JSON.stringify(selectedIds)}>
+                <button type="submit" class="btn btn-danger shadow-sm">
+                    <i class="bi bi-trash"></i> Delete Selected ({selectedIds.length})
+                </button>
+            </form>
+        {/if}
     </div>
 
     <div class="card shadow-sm">
@@ -42,7 +71,10 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th class="ps-4">Date</th>
+                                <th class="ps-4" style="width: 40px;">
+                                    <input class="form-check-input" type="checkbox" checked={allSelected} onchange={toggleAll}>
+                                </th>
+                                <th>Date</th>
                                 <th>Volunteer</th>
                                 <th>Quiz</th>
                                 <th class="text-center">Score</th>
@@ -52,7 +84,10 @@
                         <tbody>
                             {#each submissions as sub}
                                 <tr>
-                                    <td class="ps-4 text-muted small border-bottom-0">
+                                    <td class="ps-4 border-bottom-0">
+                                        <input class="form-check-input" type="checkbox" value={sub.id} bind:group={selectedIds}>
+                                    </td>
+                                    <td class="text-muted small border-bottom-0">
                                         {formatDate(sub.submission_date)}
                                     </td>
                                     <td class="border-bottom-0">
@@ -84,10 +119,10 @@
                                     {@const incorrectAnswers = sub.answers_log.filter(a => !a.isCorrect)}
                                     {#if incorrectAnswers.length > 0}
                                         <tr>
-                                            <td colspan="5" class="pt-0 pb-3 border-bottom">
+                                            <td colspan="6" class="pt-0 pb-3 border-bottom">
                                                 <details class="ms-4 bg-light p-3 rounded border">
                                                     <summary class="text-danger fw-bold" style="cursor: pointer;">
-                                                        <i class="bi bi-exclamation-triangle me-1"></i> Review ${incorrectAnswers.length} Incorrect Answer(s)
+                                                        <i class="bi bi-exclamation-triangle me-1"></i> Review {incorrectAnswers.length} Incorrect Answer(s)
                                                     </summary>
                                                     <ul class="mt-3 mb-0 text-muted small" style="list-style-type: none; padding-left: 0;">
                                                         {#each incorrectAnswers as inc}
@@ -102,10 +137,10 @@
                                             </td>
                                         </tr>
                                     {:else}
-                                        <tr><td colspan="5" class="p-0 border-bottom"></td></tr>
+                                        <tr><td colspan="6" class="p-0 border-bottom"></td></tr>
                                     {/if}
                                 {:else}
-                                    <tr><td colspan="5" class="p-0 border-bottom"></td></tr>
+                                    <tr><td colspan="6" class="p-0 border-bottom"></td></tr>
                                 {/if}
                             {/each}
                         </tbody>

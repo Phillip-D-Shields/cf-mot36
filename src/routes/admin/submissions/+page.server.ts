@@ -1,4 +1,3 @@
-// src/routes/admin/submissions/+page.server.ts
 export async function load({ platform }) {
     if (!platform?.env?.DB) {
         return { submissions: [] };
@@ -42,3 +41,37 @@ export async function load({ platform }) {
         return { submissions: [] };
     }
 }
+
+export const actions = {
+    delete: async ({ request, platform }) => {
+        if (!platform?.env?.DB) {
+            return { success: false, message: "Database connection missing" };
+        }
+
+        const formData = await request.formData();
+        const idsString = formData.get('ids')?.toString();
+
+        if (!idsString) return { success: false, message: "No IDs provided" };
+
+        try {
+            const ids = JSON.parse(idsString);
+            
+            if (!Array.isArray(ids) || ids.length === 0) {
+                return { success: false, message: "Invalid IDs array" };
+            }
+
+            // Create a string of question marks equal to the number of IDs: "?, ?, ?"
+            const placeholders = ids.map(() => '?').join(',');
+
+            // Execute the deletion
+            await platform.env.DB.prepare(
+                `DELETE FROM submissions WHERE id IN (${placeholders})`
+            ).bind(...ids).run();
+
+            return { success: true };
+        } catch (error) {
+            console.error("Bulk delete failed:", error);
+            return { success: false, message: "Failed to delete submissions." };
+        }
+    }
+};
