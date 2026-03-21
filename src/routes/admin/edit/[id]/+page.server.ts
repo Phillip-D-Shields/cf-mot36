@@ -2,7 +2,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 
 export async function load({ params, platform }) {
-    const quizId = params.id;
+    const quizId = Number(params.id);
 
     if (!platform?.env?.DB) return { quiz: null, questions: [] };
 
@@ -37,7 +37,8 @@ export async function load({ params, platform }) {
 
 export const actions = {
     default: async ({ request, params, platform }) => {
-        const quizId = params.id;
+        // Ensure quizId is explicitly a number for strict SQLite matching
+        const quizId = Number(params.id);
         const formData = await request.formData();
         
         const title = formData.get('title');
@@ -54,37 +55,45 @@ export const actions = {
         }
 
         try {
-            // A. Update the Quiz
-            await platform?.env.DB.prepare(
+            // A. Prepare the Update statement
+            const updateStmt = platform?.env.DB.prepare(
                 `UPDATE quizzes 
                  SET title = ?, description = ?, reference_url = ?, pass_threshold = ?, is_active = ?
                  WHERE id = ?`
-            ).bind(title, description, reference_url, pass_threshold, is_active, quizId).run();
+            ).bind(title, description, reference_url, pass_threshold, is_active, quizId);
 
-            // B. Wipe existing questions for this quiz
-            await platform?.env.DB.prepare(
+            // B. Prepare the Delete statement
+            const deleteStmt = platform?.env.DB.prepare(
                 "DELETE FROM questions WHERE quiz_id = ?"
-            ).bind(quizId).run();
+            ).bind(quizId);
 
-            // C. Insert the new/updated questions
+            // C. Prepare the Insert statements
+            const insertStmts = [];
             if (questions.length > 0) {
-                const stmt = platform?.env.DB.prepare(
+                const baseInsertStmt = platform?.env.DB.prepare(
                     `INSERT INTO questions (quiz_id, question_text, question_type, options, correct_answer) 
                      VALUES (?, ?, ?, ?, ?)`
                 );
 
-                const batch = questions.map(q => {
-                    return stmt?.bind(
-                        quizId,
-                        q.text,
-                        q.type,
-                        JSON.stringify(q.options),
-                        JSON.stringify(q.correctAnswer)
+                for (const q of questions) {
+                    insertStmts.push(
+                        baseInsertStmt.bind(
+                            quizId,
+                            q.text,
+                            q.type,
+                            JSON.stringify(q.options),
+                            JSON.stringify(q.correctAnswer)
+                        )
                     );
-                });
-
-                await platform.env.DB.batch(batch);
+                }
             }
+
+            // D. Execute everything as ONE atomic transaction
+            await platform?.env.DB.batch([
+                updateStmt,
+                deleteStmt,
+                ...insertStmts
+            ]);
 
         } catch (err) {
             console.error(err);
