@@ -2,14 +2,14 @@ import { fail, redirect } from '@sveltejs/kit';
 import { BRIGADE_PIN } from '$env/static/private';
 import type { Actions } from './$types';
 
-const BRIGADE_PIN = process.env.BRIGADE_PIN || '0000'; 
+const brigadePin = BRIGADE_PIN || '0000'; 
 
 export const actions: Actions = {
     default: async ({ request, cookies }) => {
         const data = await request.formData();
         const pin = data.get('pin');
 
-        if (pin === BRIGADE_PIN) {
+        if (pin === brigadePin) {
             // cookie that lasts for 30 days
             cookies.set('brigade_auth', 'true', {
                 path: '/',
