@@ -2,16 +2,16 @@
     let { data } = $props();
     let links = $derived(data.links || []);
 
-    // Configuration for how each category looks to the public
-    const categoryConfig: Record<string, { title: string, icon: string, colorClass: string }> = {
-        request: { title: 'Forms & Requests', icon: 'bi-file-earmark-text', colorClass: 'text-primary' },
-        training: { title: 'Training & Resources', icon: 'bi-journal-bookmark', colorClass: 'text-success' },
-        defect: { title: 'Defect Reporting', icon: 'bi-tools', colorClass: 'text-danger' },
-        welfare: { title: 'Health & Welfare', icon: 'bi-heart-pulse', colorClass: 'text-warning' },
-        feedback: { title: 'Feedback & Suggestions', icon: 'bi-chat-quote', colorClass: 'text-info' }
+    const categoryConfig: Record<string, { title: string, icon: string, accentColor: string }> = {
+        request: { title: 'Forms & Requests', icon: 'bi-file-earmark-text', accentColor: '#0d6efd' },
+        training: { title: 'Training & Resources', icon: 'bi-journal-bookmark', accentColor: '#198754' },
+        defect: { title: 'Defect Reporting', icon: 'bi-tools', accentColor: '#dc3545' },
+        welfare: { title: 'Health & Welfare', icon: 'bi-heart-pulse', accentColor: '#fd7e14' },
+        feedback: { title: 'Feedback & Suggestions', icon: 'bi-chat-quote', accentColor: '#0dcaf0' }
     };
 
-    // Group the flat array of links into an object categorized by their type
+    let activeCategory = $state('all');
+
     let groupedLinks = $derived(
         links.reduce((acc, link) => {
             if (!acc[link.category]) {
@@ -22,21 +22,85 @@
         }, {} as Record<string, typeof links>)
     );
 
-    // Ensure we render them in a consistent order, not just the order they appear in the DB
     const displayOrder = ['request', 'training', 'defect', 'welfare', 'feedback'];
+
+    let availableCategories = $derived(
+        displayOrder.filter(key => groupedLinks[key] && groupedLinks[key].length > 0)
+    );
+
+    let visibleCategories = $derived(
+        activeCategory === 'all'
+            ? availableCategories
+            : availableCategories.filter(key => key === activeCategory)
+    );
 </script>
 
 <style>
-    .hover-lift {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    .filter-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
     }
-    .hover-lift:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    .filter-tabs::-webkit-scrollbar {
+        display: none;
+    }
+    .filter-pill {
+        white-space: nowrap;
+        border: none;
+        background: transparent;
+        color: #6c757d;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .filter-pill:hover {
+        background: #e9ecef;
+        color: #212529;
+    }
+    .filter-pill.active {
+        background: #212529;
+        color: #fff;
+    }
+    .link-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-left: 3px solid var(--accent);
+        border-radius: 0.5rem;
+        padding: 0.875rem 1rem;
+        text-decoration: none;
+        color: inherit;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .link-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-color: #dee2e6;
+        border-left-color: var(--accent);
+    }
+    .link-card-title {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        margin: 0;
+        color: #212529;
+    }
+    .link-card-desc {
+        font-size: 0.8125rem;
+        color: #6c757d;
+        margin: 0.2rem 0 0;
+    }
+    .link-card-arrow {
+        flex-shrink: 0;
+        color: #adb5bd;
     }
 </style>
 
-<div class="bg-dark text-white py-5 mb-5 text-center">
+<div class="bg-dark text-white py-5 mb-4 text-center">
     <div class="container py-5">
         <h1 class="display-5 fw-bold mb-3">
             <i class="bi bi-compass me-2"></i>Brigade Directory
@@ -53,47 +117,59 @@
             <p class="text-muted">Links will appear here once added by an administrator.</p>
         </div>
     {:else}
-        {#each displayOrder as categoryKey}
-            {#if groupedLinks[categoryKey] && groupedLinks[categoryKey].length > 0}
+        <!-- Filter Pills -->
+        <div class="filter-tabs d-flex gap-2 mb-4 pb-2">
+            <button
+                class="filter-pill"
+                class:active={activeCategory === 'all'}
+                onclick={() => activeCategory = 'all'}
+            >
+                All
+            </button>
+            {#each availableCategories as categoryKey}
                 {@const config = categoryConfig[categoryKey]}
-                
-                <div class="mb-5">
-                    <div class="d-flex align-items-center mb-4 border-bottom pb-2">
-                        <i class="bi {config.icon} fs-3 {config.colorClass} me-3"></i>
-                        <h2 class="h4 mb-0 fw-bold">{config.title}</h2>
-                    </div>
+                <button
+                    class="filter-pill"
+                    class:active={activeCategory === categoryKey}
+                    onclick={() => activeCategory = categoryKey}
+                >
+                    <i class="bi {config.icon} me-1"></i>
+                    {config.title}
+                </button>
+            {/each}
+        </div>
 
-                    <div class="row g-4">
-                        {#each groupedLinks[categoryKey] as link}
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card h-100 shadow-sm border-0 hover-lift relative">
-                                    <div class="card-body d-flex flex-column">
-                                        <h5 class="card-title fw-bold mb-2 text-dark">
-                                            {link.title}
-                                        </h5>
-                                        
-                                        {#if link.description}
-                                            <p class="card-text text-muted small mb-4">
-                                                {link.description}
-                                            </p>
-                                        {:else}
-                                            <p class="card-text text-muted small mb-4 fst-italic">
-                                                No description provided.
-                                            </p>
-                                        {/if}
+        <!-- Category Sections -->
+        {#each visibleCategories as categoryKey}
+            {@const config = categoryConfig[categoryKey]}
 
-                                        <div class="mt-auto text-end">
-                                            <a href={link.url} target="_blank" rel="noopener noreferrer" class="text-decoration-none fw-bold stretched-link {config.colorClass}">
-                                                Open <i class="bi bi-box-arrow-up-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {/each}
-                    </div>
+            <div class="mb-4">
+                <div class="d-flex align-items: center mb-3">
+                    <h2 class="h6 mb-0 fw-bold text-muted text-uppercase" style="letter-spacing: 0.05em; font-size: 0.75rem;">
+                        {config.title}
+                    </h2>
                 </div>
-            {/if}
+
+                <div class="d-flex flex-column gap-2">
+                    {#each groupedLinks[categoryKey] as link}
+                        <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="link-card"
+                            style="--accent: {config.accentColor};"
+                        >
+                            <div style="min-width: 0;">
+                                <p class="link-card-title">{link.title}</p>
+                                {#if link.description}
+                                    <p class="link-card-desc">{link.description}</p>
+                                {/if}
+                            </div>
+                            <i class="bi bi-box-arrow-up-right link-card-arrow"></i>
+                        </a>
+                    {/each}
+                </div>
+            </div>
         {/each}
     {/if}
 </div>
