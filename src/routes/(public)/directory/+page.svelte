@@ -2,12 +2,12 @@
     let { data } = $props();
     let links = $derived(data.links || []);
 
-    const categoryConfig: Record<string, { title: string, icon: string, accentColor: string }> = {
-        request: { title: 'Forms & Requests', icon: 'bi-file-earmark-text', accentColor: '#0d6efd' },
-        training: { title: 'Training & Resources', icon: 'bi-journal-bookmark', accentColor: '#198754' },
-        defect: { title: 'Defect Reporting', icon: 'bi-tools', accentColor: '#dc3545' },
-        welfare: { title: 'Health & Welfare', icon: 'bi-heart-pulse', accentColor: '#fd7e14' },
-        feedback: { title: 'Feedback & Suggestions', icon: 'bi-chat-quote', accentColor: '#0dcaf0' }
+    const categoryConfig: Record<string, { title: string, pillLabel: string, icon: string, accentColor: string }> = {
+        request: { title: 'Forms & Requests', pillLabel: 'Forms', icon: 'bi-file-earmark-text', accentColor: '#0d6efd' },
+        training: { title: 'Training & Resources', pillLabel: 'Training', icon: 'bi-journal-bookmark', accentColor: '#198754' },
+        defect: { title: 'Defect Reporting', pillLabel: 'Defects', icon: 'bi-tools', accentColor: '#dc3545' },
+        welfare: { title: 'Health & Welfare', pillLabel: 'Welfare', icon: 'bi-heart-pulse', accentColor: '#fd7e14' },
+        feedback: { title: 'Feedback & Suggestions', pillLabel: 'Feedback', icon: 'bi-chat-quote', accentColor: '#0dcaf0' }
     };
 
     let activeCategory = $state('all');
@@ -37,15 +37,11 @@
 
 <style>
     .filter-tabs {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-    }
-    .filter-tabs::-webkit-scrollbar {
-        display: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
     .filter-pill {
-        white-space: nowrap;
         border: none;
         background: transparent;
         color: #6c757d;
@@ -118,7 +114,7 @@
         </div>
     {:else}
         <!-- Filter Pills -->
-        <div class="filter-tabs d-flex gap-2 mb-4 pb-2">
+        <div class="filter-tabs mb-4">
             <button
                 class="filter-pill"
                 class:active={activeCategory === 'all'}
@@ -134,7 +130,7 @@
                     onclick={() => activeCategory = categoryKey}
                 >
                     <i class="bi {config.icon} me-1"></i>
-                    {config.title}
+                    {config.pillLabel}
                 </button>
             {/each}
         </div>
@@ -144,7 +140,7 @@
             {@const config = categoryConfig[categoryKey]}
 
             <div class="mb-4">
-                <div class="d-flex align-items: center mb-3">
+                <div class="d-flex align-items-center mb-3">
                     <h2 class="h6 mb-0 fw-bold text-muted text-uppercase" style="letter-spacing: 0.05em; font-size: 0.75rem;">
                         {config.title}
                     </h2>

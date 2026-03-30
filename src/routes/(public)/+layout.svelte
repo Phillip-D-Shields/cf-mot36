@@ -1,7 +1,24 @@
 <script lang="ts">
     import { page } from '$app/state';
     let { children } = $props();
+
+    let navOpen = $state(false);
+
+    // Close navbar on route change
+    $effect(() => {
+        page.url.pathname;
+        navOpen = false;
+    });
+
+    function handleOutsideClick(e: MouseEvent) {
+        const target = e.target as HTMLElement;
+        if (navOpen && !target.closest('.navbar')) {
+            navOpen = false;
+        }
+    }
 </script>
+
+<svelte:document onclick={handleOutsideClick} />
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
     <div class="container">
@@ -9,11 +26,18 @@
             <i class="bi bi-shield-fill-check me-2"></i>Brigade Portal
         </a>
         
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#publicNavbar">
+        <button
+            class="navbar-toggler"
+            type="button"
+            aria-controls="publicNavbar"
+            aria-expanded={navOpen}
+            aria-label="Toggle navigation"
+            onclick={() => navOpen = !navOpen}
+        >
             <span class="navbar-toggler-icon"></span>
         </button>
         
-        <div class="collapse navbar-collapse" id="publicNavbar">
+        <div class="navbar-collapse" class:collapse={!navOpen} id="publicNavbar">
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 <li class="nav-item">
                     <a class="nav-link" class:active={page.url.pathname === '/'} href="/">
