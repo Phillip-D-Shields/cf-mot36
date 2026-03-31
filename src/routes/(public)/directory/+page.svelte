@@ -3,7 +3,7 @@
     let links = $derived(data.links || []);
 
     const categoryConfig: Record<string, { title: string, pillLabel: string, icon: string, accentColor: string }> = {
-        request: { title: 'Forms & Requests', pillLabel: 'Forms', icon: 'bi-file-earmark-text', accentColor: '#0d6efd' },
+        request: { title: 'Requests & Forms', pillLabel: 'Requests', icon: 'bi-file-earmark-text', accentColor: '#0d6efd' },
         training: { title: 'Training & Resources', pillLabel: 'Training', icon: 'bi-journal-bookmark', accentColor: '#198754' },
         defect: { title: 'Defect Reporting', pillLabel: 'Defects', icon: 'bi-tools', accentColor: '#dc3545' },
         welfare: { title: 'Health & Welfare', pillLabel: 'Welfare', icon: 'bi-heart-pulse', accentColor: '#fd7e14' },

@@ -5,15 +5,6 @@ import { Resend } from 'resend';
 
 const resend = new Resend(RESEND_API_KEY);
 
-// Helper: Compare arrays for multi-choice questions regardless of order
-const arraysMatch = (arr1: any[], arr2: any[]) => {
-    if (!Array.isArray(arr1) || !Array.isArray(arr2) || arr1.length !== arr2.length) return false;
-    // Map everything to strings so [1, 2] matches ["1", "2"]
-    const str1 = arr1.map(String);
-    const str2 = arr2.map(String);
-    return str1.every(val => str2.includes(val));
-};
-
 // Helper: Translate answer IDs to readable text safely
 const getAnswerText = (answer: any, type: string, optionsJson: string | null) => {
     if (type === 'true_false') return String(answer);
@@ -21,11 +12,9 @@ const getAnswerText = (answer: any, type: string, optionsJson: string | null) =>
 
     try {
         const options = JSON.parse(optionsJson);
-        // Force the answer into an array so we can map it consistently
         const answerArray = Array.isArray(answer) ? answer : [answer];
 
         return answerArray.map(id => {
-            // Use String() to prevent number vs string equality failures
             const option = options.find((o: any) => String(o.id) === String(id));
             return option ? option.text : id;
         }).join(', ');
@@ -47,10 +36,14 @@ const generateEmailHtml = (name: string, brigadeId: string, score: number, passe
     `;
 
     gradedAnswers.forEach(ans => {
+        const bgColor = ans.isCorrect ? '#f0fdf4' : ans.isPartial ? '#fffbeb' : '#fef2f2';
+        const borderColor = ans.isCorrect ? '#22c55e' : ans.isPartial ? '#f59e0b' : '#ef4444';
+        const icon = ans.isCorrect ? '✅' : ans.isPartial ? `⚠️ (${ans.partialScore})` : '❌';
+
         html += `
-            <li style="margin-bottom: 15px; padding: 10px; background-color: ${ans.isCorrect ? '#f0fdf4' : '#fef2f2'}; border-left: 4px solid ${ans.isCorrect ? '#22c55e' : '#ef4444'};">
+            <li style="margin-bottom: 15px; padding: 10px; background-color: ${bgColor}; border-left: 4px solid ${borderColor};">
                 <strong>Q: ${ans.question}</strong><br/>
-                Your Answer: ${ans.userAnswer} ${ans.isCorrect ? '✅' : '❌'}<br/>
+                Your Answer: ${ans.userAnswer} ${icon}<br/>
                 ${!ans.isCorrect ? `<em style="color: #666;">Correct Answer: ${ans.correctAnswer}</em>` : ''}
             </li>
         `;
@@ -109,16 +102,14 @@ export const actions = {
         const userAnswers = JSON.parse(answersRaw);
 
         try {
-            // 1. Fetch correct answers & pass threshold concurrently
-            // UPDATE: We now fetch question_text and options as well to map the readable text
             const [correctAnswersResult, quizMeta] = await Promise.all([
                 platform?.env.DB.prepare("SELECT id, question_text, question_type, options, correct_answer FROM questions WHERE quiz_id = ?").bind(quizId).all(),
                 platform?.env.DB.prepare("SELECT pass_threshold FROM quizzes WHERE id = ?").bind(quizId).first()
             ]);
 
-            // 2. Grade the test and log rich data
-            let correctCount = 0;
-            const totalQuestions = correctAnswersResult?.results.length || 0;
+            // --- Partial credit grading ---
+            let totalPointsEarned = 0;
+            let totalPointsPossible = 0;
             const gradedAnswers: any[] = [];
 
             correctAnswersResult?.results.forEach(q => {
@@ -126,34 +117,61 @@ export const actions = {
                 const userAnswerRaw = userAnswers[q.id.toString()];
 
                 let isCorrect = false;
+                let isPartial = false;
+                let partialScore = '';
 
-                // If it's multi_choice, strictly enforce array comparison
                 if (q.question_type === 'multi_choice') {
-                    const correctArr = Array.isArray(correctAnswerRaw) ? correctAnswerRaw : [correctAnswerRaw];
-                    const userArr = Array.isArray(userAnswerRaw) ? userAnswerRaw : [userAnswerRaw].filter(Boolean);
+                    // Build sets of string IDs for reliable comparison
+                    const correctSet = new Set(
+                        (Array.isArray(correctAnswerRaw) ? correctAnswerRaw : [correctAnswerRaw]).map(String)
+                    );
+                    const userSet = new Set(
+                        (Array.isArray(userAnswerRaw) ? userAnswerRaw : [userAnswerRaw].filter(Boolean)).map(String)
+                    );
 
-                    if (arraysMatch(correctArr, userArr)) isCorrect = true;
+                    let earned = 0;
+                    let penalty = 0;
+
+                    for (const pick of userSet) {
+                        if (correctSet.has(pick)) {
+                            earned++;
+                        } else {
+                            penalty++;
+                        }
+                    }
+
+                    const questionScore = Math.max(0, (earned - penalty) / correctSet.size);
+                    totalPointsEarned += questionScore;
+                    totalPointsPossible += 1;
+
+                    isCorrect = questionScore === 1;
+                    isPartial = !isCorrect && questionScore > 0;
+                    partialScore = `${Math.round(questionScore * 100)}%`;
+
                 } else {
-                    // Single choice or true/false (compare as strings)
-                    if (String(userAnswerRaw) === String(correctAnswerRaw)) isCorrect = true;
+                    // single_choice or true_false — still all-or-nothing
+                    if (String(userAnswerRaw) === String(correctAnswerRaw)) {
+                        isCorrect = true;
+                        totalPointsEarned += 1;
+                    }
+                    totalPointsPossible += 1;
                 }
 
-                if (isCorrect) correctCount++;
-
-                // Build a readable log for this specific question
                 gradedAnswers.push({
                     question: q.question_text,
                     userAnswer: getAnswerText(userAnswerRaw, q.question_type as string, q.options as string) || 'No answer provided',
                     correctAnswer: getAnswerText(correctAnswerRaw, q.question_type as string, q.options as string),
-                    isCorrect
+                    isCorrect,
+                    isPartial,
+                    partialScore
                 });
             });
 
             // 3. Calculate Score
-            const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+            const score = totalPointsPossible > 0 ? Math.round((totalPointsEarned / totalPointsPossible) * 100) : 0;
             const passed = score >= (quizMeta?.pass_threshold as number) ? 1 : 0;
 
-            // 4. Save Submission (Saving the detailed graded array instead of raw IDs)
+            // 4. Save Submission
             const gradedAnswersJson = JSON.stringify(gradedAnswers);
             await platform?.env.DB.prepare(
                 `INSERT INTO submissions (quiz_id, volunteer_name, brigade_id, score, passed, answers_log) 
@@ -165,9 +183,10 @@ export const actions = {
                 await resend.emails.send({
                     from: 'brigade@digiwha-labs.com',
                     to: [
-                        "matua.phillip.shields@gmail.com",
-                        "jess.nelipovich@gmail.com", 
-                        "k_silcock@hotmail.com"
+                        "phillip.shields@fireandemergency.nz",
+                        "jessica.nelipovich@fireandemergency.nz",
+                        "kyle.silcock@fireandemergency.nz",
+                        "kieran.barnes@fireandemergency.nz"
                     ],
                     subject: `New Certification Submission: ${volunteer_name} - ${score}%`,
                     html: generateEmailHtml(volunteer_name, brigade_id, score, passed === 1, gradedAnswers)
