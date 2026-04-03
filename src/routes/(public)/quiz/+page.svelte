@@ -3,7 +3,7 @@
     let quizzes = $derived(data.activeQuizzes || []);
 </script>
 
-<div class="bg-primary text-white py-5 mb-5">
+<div class="bg-primary text-white py-1 mb-5 mt-3">
     <div class="container text-center py-5">
         <h1 class="display-5 fw-bold">Brigade Certification Portal</h1>
         <p class="lead mb-0">Select an operational skills test below to begin your certification or renewal.</p>

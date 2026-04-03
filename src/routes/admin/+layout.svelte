@@ -7,7 +7,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 	<div class="container">
 		<a class="navbar-brand fw-bold" href="/admin">
-			<i class="bi bi-shield-shaded"></i>Brigade Admin
+			<i class="bi bi-shield-shaded"></i>MOT36 Admin
 		</a>
 
 		<button

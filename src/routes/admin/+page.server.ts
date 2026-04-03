@@ -1,35 +1,53 @@
 export async function load({ platform }) {
-    // Failsafe for local dev if DB isn't bound properly
     if (!platform?.env?.DB) {
         return { 
             quizzes: [], 
-            stats: { total: 0, active: 0 } 
+            stats: { total: 0, active: 0 },
+            linkStats: { total: 0, byCategory: {} }
         };
     }
 
     try {
-        // Fetch all quizzes
-        const result = await platform.env.DB.prepare(
-            "SELECT * FROM quizzes ORDER BY created_at DESC"
-        ).all();
+        const [quizzesResult, linksCountResult, linksByCategoryResult] = await Promise.all([
+            platform.env.DB.prepare(
+                "SELECT * FROM quizzes ORDER BY created_at DESC"
+            ).all(),
+            platform.env.DB.prepare(
+                "SELECT COUNT(*) as total FROM links"
+            ).first(),
+            platform.env.DB.prepare(
+                "SELECT category, COUNT(*) as count FROM links GROUP BY category"
+            ).all()
+        ]);
 
-        const quizzes = result.results;
+        const quizzes = quizzesResult.results;
 
-        // Calculate quick stats for the dashboard
         const stats = {
             total: quizzes.length,
             active: quizzes.filter(q => q.is_active === 1).length
         };
 
+        const byCategory: Record<string, number> = {};
+        for (const row of linksByCategoryResult.results) {
+            byCategory[row.category as string] = row.count as number;
+        }
+
+        const linkStats = {
+            total: (linksCountResult?.total as number) || 0,
+            byCategory
+        };
+
         return {
             quizzes,
-            stats
+            stats,
+            linkStats
         };
     } catch (error) {
         console.error("Database error:", error);
         return { 
             quizzes: [], 
-            stats: { total: 0, active: 0 } 
+            stats: { total: 0, active: 0 },
+            linkStats: { total: 0, byCategory: {} }
         };
     }
 }

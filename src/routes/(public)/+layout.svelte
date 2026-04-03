@@ -23,7 +23,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
     <div class="container">
         <a class="navbar-brand fw-bold" href="/">
-            <i class="bi bi-shield-fill-check me-2"></i>Brigade Portal
+            <i class="bi bi-shield-fill-check me-2"></i>MOT36
         </a>
         
         <button

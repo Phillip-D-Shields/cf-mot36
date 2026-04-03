@@ -1,7 +1,7 @@
-<div class="bg-white py-5 shadow-sm mb-5 border-bottom">
+<div class="bg-white py-1 shadow-sm mb-5 border-bottom mt-2">
     <div class="container text-center py-5">
         <i class="bi bi-shield-shaded display-1 text-primary mb-3 d-inline-block"></i>
-        <h1 class="display-4 fw-bold text-dark mb-3">Welcome to the Brigade</h1>
+        <h1 class="display-4 fw-bold text-dark mb-3">Welcome to the MOT36 Portal</h1>
         <p class="lead text-muted mb-4 max-w-75 mx-auto">
             Your central hub for operational certifications, training materials, and important brigade resources.
         </p>
