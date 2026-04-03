@@ -96,7 +96,7 @@
     }
 </style>
 
-<div class="bg-dark text-white py-5 mb-4 text-center">
+<div class="bg-dark text-white py-5 mb-4 text-center mt-5">
     <div class="container py-5">
         <h1 class="display-5 fw-bold mb-3">
             <i class="bi bi-compass me-2"></i>Brigade Directory
