@@ -28,7 +28,7 @@
 <style>
     .quiz-container {
         max-width: 720px;
-        margin: 2rem auto 0;
+        margin: 0 auto;
         padding: 2rem 1rem 4rem;
     }
     .intro-card {
@@ -90,7 +90,7 @@
         margin: 0;
         line-height: 1.5;
     }
-    .option-label {
+    .option-row {
         display: flex;
         align-items: center;
         gap: 0.625rem;
@@ -98,21 +98,24 @@
         border: 1px solid #e9ecef;
         border-radius: 0.375rem;
         margin-bottom: 0.5rem;
-        cursor: pointer;
         font-size: 0.9375rem;
         color: #212529;
         transition: border-color 0.15s ease, background 0.15s ease;
     }
-    .option-label:hover {
+    .option-row:hover {
         border-color: #c5d1dc;
         background: #f8f9fa;
     }
-    .option-label input[type="radio"],
-    .option-label input[type="checkbox"] {
+    .option-row input[type="radio"],
+    .option-row input[type="checkbox"] {
         accent-color: #0d6efd;
         width: 1rem;
         height: 1rem;
         flex-shrink: 0;
+        cursor: pointer;
+    }
+    .option-row label {
+        cursor: pointer;
     }
     .submit-bar {
         background: #fff;
@@ -221,29 +224,29 @@
                         <p class="question-text">{q.text}</p>
                     </div>
 
-                    <div style="padding-left: 2.5rem;">
+                    <div>
                         {#if q.type === 'true_false'}
-                            <label class="option-label" for={'t_' + q.id}>
+                            <div class="option-row">
                                 <input type="radio" name={'q_' + q.id} id={'t_' + q.id} value="true" bind:group={userAnswers[q.id]} required />
-                                True
-                            </label>
-                            <label class="option-label" for={'f_' + q.id}>
+                                <label for={'t_' + q.id}>True</label>
+                            </div>
+                            <div class="option-row">
                                 <input type="radio" name={'q_' + q.id} id={'f_' + q.id} value="false" bind:group={userAnswers[q.id]} required />
-                                False
-                            </label>
+                                <label for={'f_' + q.id}>False</label>
+                            </div>
                         {:else if q.type === 'single_choice'}
                             {#each q.options as opt}
-                                <label class="option-label" for={'opt_' + opt.id}>
+                                <div class="option-row">
                                     <input type="radio" name={'q_' + q.id} id={'opt_' + opt.id} value={opt.id} bind:group={userAnswers[q.id]} required />
-                                    {opt.text}
-                                </label>
+                                    <label for={'opt_' + opt.id}>{opt.text}</label>
+                                </div>
                             {/each}
                         {:else if q.type === 'multi_choice'}
                             {#each q.options as opt}
-                                <label class="option-label" for={'opt_' + opt.id}>
+                                <div class="option-row">
                                     <input type="checkbox" name={'q_' + q.id} id={'opt_' + opt.id} value={opt.id} bind:group={userAnswers[q.id]} />
-                                    {opt.text}
-                                </label>
+                                    <label for={'opt_' + opt.id}>{opt.text}</label>
+                                </div>
                             {/each}
                         {/if}
                     </div>
