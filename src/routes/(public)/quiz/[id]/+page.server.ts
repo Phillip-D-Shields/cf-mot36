@@ -24,9 +24,10 @@ const getAnswerText = (answer: any, type: string, optionsJson: string | null) =>
 };
 
 // Helper: Generate Email HTML
-const generateEmailHtml = (name: string, brigadeId: string, score: number, passed: boolean, gradedAnswers: any[]) => {
+const generateEmailHtml = (quizTitle: string, name: string, brigadeId: string, score: number, passed: boolean, gradedAnswers: any[]) => {
     let html = `
-        <h2>New Certification Submitted</h2>
+        <h2>New Quiz Submitted</h2>
+        <h3>${quizTitle}</h3>
         <p><strong>Volunteer:</strong> ${name} (ID: ${brigadeId})</p>
         <p><strong>Score:</strong> ${score}%</p>
         <p><strong>Result:</strong> ${passed ? '✅ PASSED' : '❌ FAILED'}</p>
@@ -91,6 +92,7 @@ export const actions = {
         const quizId = params.id;
         const formData = await request.formData();
 
+        const quiz_title = formData.get('quiz_title')?.toString() || 'Unknown Quiz';
         const volunteer_name = formData.get('volunteer_name')?.toString();
         const brigade_id = formData.get('brigade_id')?.toString() || 'N/A';
         const answersRaw = formData.get('answers_json')?.toString();
@@ -185,11 +187,10 @@ export const actions = {
                     to: [
                         "phillip.shields@fireandemergency.nz",
                         "jessica.nelipovich@fireandemergency.nz",
-                        "kyle.silcock@fireandemergency.nz",
-                        "kieran.barnes@fireandemergency.nz"
+                        "kyle.silcock@fireandemergency.nz"
                     ],
-                    subject: `New Certification Submission: ${volunteer_name} - ${score}%`,
-                    html: generateEmailHtml(volunteer_name, brigade_id, score, passed === 1, gradedAnswers)
+                    subject: `New Quiz Submission: ${quiz_title} - ${volunteer_name} - ${score}%`,
+                    html: generateEmailHtml(quiz_title, volunteer_name, brigade_id, score, passed === 1, gradedAnswers)
                 });
             } catch (emailErr) {
                 console.error("Failed to send email:", emailErr);

@@ -8,314 +8,127 @@
     let linkStats = $derived(data.linkStats || { total: 0, byCategory: {} });
     let quizToDelete = $state(null);
 
-    const categoryLabels: Record<string, { label: string, color: string }> = {
-        request: { label: 'Forms', color: '#0d6efd' },
-        training: { label: 'Training', color: '#198754' },
-        defect: { label: 'Defects', color: '#dc3545' },
-        welfare: { label: 'Welfare', color: '#fd7e14' },
-        feedback: { label: 'Feedback', color: '#0dcaf0' }
+    const categoryLabels: Record<string, { label: string, badgeClass: string }> = {
+        request: { label: 'Forms', badgeClass: 'text-primary' },
+        training: { label: 'Training', badgeClass: 'text-success' },
+        defect: { label: 'Defects', badgeClass: 'text-danger' },
+        welfare: { label: 'Welfare', badgeClass: 'text-warning' },
+        feedback: { label: 'Feedback', badgeClass: 'text-info' }
     };
 </script>
 
-<style>
-    .dash-container {
-        max-width: 960px;
-        margin: 0 auto;
-        padding: 2rem 1rem 4rem;
-    }
-    .page-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #212529;
-        margin: 0 0 0.25rem;
-    }
-    .page-subtitle {
-        font-size: 0.875rem;
-        color: #6c757d;
-        margin: 0 0 2rem;
-    }
-    .section-label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #6c757d;
-        margin-bottom: 0.75rem;
-    }
-    .stat-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 0.75rem;
-        margin-bottom: 2rem;
-    }
-    .stat-card {
-        background: #f8f9fa;
-        border-radius: 0.5rem;
-        padding: 1rem 1.25rem;
-    }
-    .stat-card-label {
-        font-size: 0.75rem;
-        color: #6c757d;
-        margin: 0 0 0.25rem;
-    }
-    .stat-card-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #212529;
-        margin: 0;
-    }
-    .action-card {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        background: #fff;
-        border: 1px solid #e9ecef;
-        border-radius: 0.5rem;
-        padding: 1rem 1.25rem;
-        margin-bottom: 0.75rem;
-        text-decoration: none;
-        color: inherit;
-        transition: box-shadow 0.15s ease;
-    }
-    .action-card:hover {
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .action-card-title {
-        font-size: 0.9375rem;
-        font-weight: 600;
-        color: #212529;
-        margin: 0;
-    }
-    .action-card-desc {
-        font-size: 0.8125rem;
-        color: #6c757d;
-        margin: 0.125rem 0 0;
-    }
-    .action-card-arrow {
-        flex-shrink: 0;
-        color: #adb5bd;
-    }
-    .quiz-table-card {
-        background: #fff;
-        border: 1px solid #e9ecef;
-        border-radius: 0.5rem;
-        overflow: hidden;
-    }
-    .quiz-table-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid #e9ecef;
-    }
-    .quiz-table-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #212529;
-        margin: 0;
-    }
-    .quiz-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 0.875rem 1.25rem;
-        border-bottom: 1px solid #f1f3f5;
-    }
-    .quiz-row:last-child {
-        border-bottom: none;
-    }
-    .quiz-row-info {
-        min-width: 0;
-        flex: 1;
-    }
-    .quiz-row-title {
-        font-size: 0.9375rem;
-        font-weight: 600;
-        color: #212529;
-        margin: 0;
-    }
-    .quiz-row-meta {
-        font-size: 0.75rem;
-        color: #6c757d;
-        margin: 0.125rem 0 0;
-    }
-    .badge-status {
-        display: inline-block;
-        font-size: 0.6875rem;
-        font-weight: 600;
-        padding: 0.2rem 0.625rem;
-        border-radius: 1rem;
-    }
-    .badge-active {
-        background: #e8f5e9;
-        color: #198754;
-    }
-    .badge-archived {
-        background: #f1f3f5;
-        color: #6c757d;
-    }
-    .quiz-row-actions {
-        display: flex;
-        gap: 0.5rem;
-        flex-shrink: 0;
-    }
-    .btn-sm-clean {
-        font-size: 0.8125rem;
-        font-weight: 500;
-        padding: 0.375rem 0.75rem;
-        border-radius: 0.375rem;
-        border: 1px solid #dee2e6;
-        background: #fff;
-        color: #495057;
-        cursor: pointer;
-        transition: all 0.15s ease;
-        text-decoration: none;
-    }
-    .btn-sm-clean:hover {
-        background: #f8f9fa;
-        border-color: #c5cdd5;
-    }
-    .btn-sm-danger {
-        color: #dc3545;
-        border-color: #f5c6cb;
-    }
-    .btn-sm-danger:hover {
-        background: #fdecea;
-        border-color: #dc3545;
-    }
-    .link-breakdown {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 0.75rem;
-    }
-    .link-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.375rem;
-        font-size: 0.75rem;
-        font-weight: 500;
-        padding: 0.25rem 0.625rem;
-        border-radius: 1rem;
-        background: #f1f3f5;
-        color: #495057;
-    }
-    .link-tag-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-    }
-    .empty-state {
-        padding: 3rem 1rem;
-        text-align: center;
-        color: #6c757d;
-    }
-</style>
-
-<div class="dash-container">
-    <h1 class="page-title">Overview</h1>
-    <p class="page-subtitle">Manage certifications, submissions, and brigade resources.</p>
+<div class="container pt-5 mt-4 pb-5" style="max-width: 960px;">
+    <h1 class="fs-4 fw-bold mb-1">Overview</h1>
+    <p class="text-secondary small mb-4">Manage certifications, submissions, and brigade resources.</p>
 
     <!-- Stats -->
-    <div class="stat-grid text-center">
-        <div class="stat-card">
-            <p class="stat-card-label">Total quizzes</p>
-            <p class="stat-card-value">{stats.total}</p>
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-sm-4">
+            <div class="bg-light rounded-3 p-3">
+                <p class="small text-secondary mb-1">Total quizzes</p>
+                <p class="fs-4 fw-bold mb-0">{stats.total}</p>
+            </div>
         </div>
-        <div class="stat-card">
-            <p class="stat-card-label">Active quizzes</p>
-            <p class="stat-card-value">{stats.active}</p>
+        <div class="col-sm-4">
+            <div class="bg-light rounded-3 p-3">
+                <p class="small text-secondary mb-1">Active quizzes</p>
+                <p class="fs-4 fw-bold mb-0">{stats.active}</p>
+            </div>
         </div>
-        <div class="stat-card">
-            <p class="stat-card-label">Directory links</p>
-            <p class="stat-card-value">{linkStats.total}</p>
+        <div class="col-sm-4">
+            <div class="bg-light rounded-3 p-3">
+                <p class="small text-secondary mb-1">Directory links</p>
+                <p class="fs-4 fw-bold mb-0">{linkStats.total}</p>
+            </div>
         </div>
     </div>
 
     <!-- Directory breakdown -->
     {#if linkStats.total > 0}
-        <div style="margin-bottom: 2rem;">
-            <div class="link-breakdown">
-                {#each Object.entries(linkStats.byCategory) as [cat, count]}
-                    {@const config = categoryLabels[cat]}
-                    {#if config}
-                        <span class="link-tag">
-                            <span class="link-tag-dot" style="background: {config.color};"></span>
-                            {config.label}: {count}
-                        </span>
-                    {/if}
-                {/each}
-            </div>
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            {#each Object.entries(linkStats.byCategory) as [cat, count]}
+                {@const config = categoryLabels[cat]}
+                {#if config}
+                    <span class="badge bg-light text-body-secondary rounded-pill fw-medium px-3 py-2">
+                        <i class="bi bi-circle-fill small {config.badgeClass} me-1" style="font-size: 0.5rem; vertical-align: middle;"></i>
+                        {config.label}: {count}
+                    </span>
+                {/if}
+            {/each}
         </div>
     {/if}
 
     <!-- Quick Actions -->
-    <p class="section-label">Quick actions</p>
+    <p class="fw-semibold text-muted text-uppercase small mb-3" style="letter-spacing: 0.05em; font-size: 0.75rem;">Quick actions</p>
 
-    <a href="/admin/submissions" class="action-card">
-        <div>
-            <p class="action-card-title">Volunteer Submissions</p>
-            <p class="action-card-desc">View and manage certification results</p>
+    <a href="/admin/submissions" class="card text-decoration-none mb-2">
+        <div class="card-body d-flex align-items-center justify-content-between py-3 px-3">
+            <div>
+                <p class="fw-semibold mb-0 text-body">Volunteer Submissions</p>
+                <p class="small text-secondary mb-0 mt-1">View and manage certification results</p>
+            </div>
+            <i class="bi bi-arrow-right text-secondary"></i>
         </div>
-        <i class="bi bi-arrow-right action-card-arrow"></i>
     </a>
 
-    <a href="/admin/links" class="action-card">
-        <div>
-            <p class="action-card-title">Directory Links</p>
-            <p class="action-card-desc">Manage forms, training, and resource links</p>
+    <a href="/admin/links" class="card text-decoration-none mb-2">
+        <div class="card-body d-flex align-items-center justify-content-between py-3 px-3">
+            <div>
+                <p class="fw-semibold mb-0 text-body">Directory Links</p>
+                <p class="small text-secondary mb-0 mt-1">Manage forms, training, and resource links</p>
+            </div>
+            <i class="bi bi-arrow-right text-secondary"></i>
         </div>
-        <i class="bi bi-arrow-right action-card-arrow"></i>
     </a>
 
     <!-- Quizzes Table -->
-    <p class="section-label" style="margin-top: 2rem;">Certifications</p>
+    <p class="fw-semibold text-muted text-uppercase small mb-3 mt-4" style="letter-spacing: 0.05em; font-size: 0.75rem;">Certifications</p>
 
-    <div class="quiz-table-card">
-        <div class="quiz-table-header">
-            <h2 class="quiz-table-title">All Quizzes</h2>
-            <a href="/admin/create" class="btn-sm-clean" style="color: #0d6efd; border-color: #b6d4fe;">
+    <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h2 class="fs-6 fw-semibold mb-0">All Quizzes</h2>
+            <a href="/admin/create" class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-plus-lg me-1"></i> New
             </a>
         </div>
 
         {#if quizzes.length === 0}
-            <div class="empty-state">
-                <p>No quizzes yet. Create one to get started.</p>
+            <div class="text-center text-secondary py-5 px-3">
+                <p class="mb-0">No quizzes yet. Create one to get started.</p>
             </div>
         {:else}
-            {#each quizzes as quiz}
-                <div class="quiz-row">
-                    <div class="quiz-row-info">
-                        <p class="quiz-row-title">{quiz.title}</p>
-                        <p class="quiz-row-meta">
-                            <span class="badge-status" class:badge-active={quiz.is_active === 1} class:badge-archived={quiz.is_active !== 1}>
-                                {quiz.is_active ? 'Active' : 'Archived'}
-                            </span>
-                            · Pass: {quiz.pass_threshold}%
-                        </p>
+            <div class="list-group list-group-flush">
+                {#each quizzes as quiz}
+                    <div class="list-group-item d-flex align-items-center justify-content-between gap-3 py-3">
+                        <div class="min-vw-0 flex-grow-1">
+                            <p class="fw-semibold mb-0">{quiz.title}</p>
+                            <p class="small text-secondary mb-0 mt-1">
+                                <span class="badge rounded-pill {quiz.is_active === 1 ? 'bg-success-subtle text-success' : 'bg-light text-secondary'}">
+                                    {quiz.is_active ? 'Active' : 'Archived'}
+                                </span>
+                                <span class="ms-1">· Pass: {quiz.pass_threshold}%</span>
+                            </p>
+                        </div>
+                        <div class="d-flex gap-2 flex-shrink-0">
+                            <a href="/admin/edit/{quiz.id}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-danger"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteModal"
+                                onclick={() => (quizToDelete = quiz)}
+                            >
+                                Delete
+                            </button>
+                        </div>
                     </div>
-                    <div class="quiz-row-actions">
-                        <a href="/admin/edit/{quiz.id}" class="btn-sm-clean">Edit</a>
-                        <button
-                            type="button"
-                            class="btn-sm-clean btn-sm-danger"
-                            data-bs-toggle="modal"
-                            data-bs-target="#deleteModal"
-                            onclick={() => (quizToDelete = quiz)}
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            {/each}
+                {/each}
+            </div>
         {/if}
     </div>
 </div>
 
-<!-- Delete Modal (unchanged logic) -->
+<!-- Delete Modal -->
 <div
     class="modal fade"
     id="deleteModal"

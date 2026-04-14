@@ -2,12 +2,12 @@
     let { data } = $props();
     let links = $derived(data.links || []);
 
-    const categoryConfig: Record<string, { title: string, pillLabel: string, icon: string, accentColor: string }> = {
-        request: { title: 'Requests & Forms', pillLabel: 'Requests', icon: 'bi-file-earmark-text', accentColor: '#0d6efd' },
-        training: { title: 'Training & Resources', pillLabel: 'Training', icon: 'bi-journal-bookmark', accentColor: '#198754' },
-        defect: { title: 'Defect Reporting', pillLabel: 'Defects', icon: 'bi-tools', accentColor: '#dc3545' },
-        welfare: { title: 'Health & Welfare', pillLabel: 'Welfare', icon: 'bi-heart-pulse', accentColor: '#fd7e14' },
-        feedback: { title: 'Feedback & Suggestions', pillLabel: 'Feedback', icon: 'bi-chat-quote', accentColor: '#0dcaf0' }
+    const categoryConfig: Record<string, { title: string, pillLabel: string, icon: string, borderClass: string }> = {
+        request: { title: 'Requests & Forms', pillLabel: 'Requests', icon: 'bi-file-earmark-text', borderClass: 'border-primary' },
+        training: { title: 'Training & Resources', pillLabel: 'Training', icon: 'bi-journal-bookmark', borderClass: 'border-success' },
+        defect: { title: 'Defect Reporting', pillLabel: 'Defects', icon: 'bi-tools', borderClass: 'border-danger' },
+        welfare: { title: 'Health & Welfare', pillLabel: 'Welfare', icon: 'bi-heart-pulse', borderClass: 'border-warning' },
+        feedback: { title: 'Feedback & Suggestions', pillLabel: 'Feedback', icon: 'bi-chat-quote', borderClass: 'border-info' }
     };
 
     let activeCategory = $state('all');
@@ -35,68 +35,7 @@
     );
 </script>
 
-<style>
-    .filter-tabs {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-    .filter-pill {
-        border: none;
-        background: transparent;
-        color: #6c757d;
-        padding: 0.5rem 1rem;
-        border-radius: 2rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    .filter-pill:hover {
-        background: #e9ecef;
-        color: #212529;
-    }
-    .filter-pill.active {
-        background: #212529;
-        color: #fff;
-    }
-    .link-card {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
-        background: #fff;
-        border: 1px solid #e9ecef;
-        border-left: 3px solid var(--accent);
-        border-radius: 0.5rem;
-        padding: 0.875rem 1rem;
-        text-decoration: none;
-        color: inherit;
-        transition: box-shadow 0.2s ease, border-color 0.2s ease;
-    }
-    .link-card:hover {
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        border-color: #dee2e6;
-        border-left-color: var(--accent);
-    }
-    .link-card-title {
-        font-size: 0.9375rem;
-        font-weight: 600;
-        margin: 0;
-        color: #212529;
-    }
-    .link-card-desc {
-        font-size: 0.8125rem;
-        color: #6c757d;
-        margin: 0.2rem 0 0;
-    }
-    .link-card-arrow {
-        flex-shrink: 0;
-        color: #adb5bd;
-    }
-</style>
-
-<div class="bg-dark text-white py-1 mb-4 text-center mt-5">
+<div class="bg-dark text-white py-1 mb-4 text-center" style="margin-top: 56px;">
     <div class="container py-5">
         <h1 class="display-5 fw-bold mb-3">
             <i class="bi bi-compass me-2"></i>Brigade Directory
@@ -114,10 +53,9 @@
         </div>
     {:else}
         <!-- Filter Pills -->
-        <div class="filter-tabs mb-4">
+        <div class="d-flex flex-wrap gap-2 mb-4">
             <button
-                class="filter-pill"
-                class:active={activeCategory === 'all'}
+                class="btn btn-sm rounded-pill {activeCategory === 'all' ? 'btn-dark' : 'btn-outline-secondary'}"
                 onclick={() => activeCategory = 'all'}
             >
                 All
@@ -125,8 +63,7 @@
             {#each availableCategories as categoryKey}
                 {@const config = categoryConfig[categoryKey]}
                 <button
-                    class="filter-pill"
-                    class:active={activeCategory === categoryKey}
+                    class="btn btn-sm rounded-pill {activeCategory === categoryKey ? 'btn-dark' : 'btn-outline-secondary'}"
                     onclick={() => activeCategory = categoryKey}
                 >
                     <i class="bi {config.icon} me-1"></i>
@@ -140,11 +77,9 @@
             {@const config = categoryConfig[categoryKey]}
 
             <div class="mb-4">
-                <div class="d-flex align-items-center mb-3">
-                    <h2 class="h6 mb-0 fw-bold text-muted text-uppercase" style="letter-spacing: 0.05em; font-size: 0.75rem;">
-                        {config.title}
-                    </h2>
-                </div>
+                <h2 class="fw-bold text-muted text-uppercase small mb-3" style="letter-spacing: 0.05em; font-size: 0.75rem;">
+                    {config.title}
+                </h2>
 
                 <div class="d-flex flex-column gap-2">
                     {#each groupedLinks[categoryKey] as link}
@@ -152,16 +87,17 @@
                             href={link.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="link-card"
-                            style="--accent: {config.accentColor};"
+                            class="card text-decoration-none border-start border-3 {config.borderClass}"
                         >
-                            <div style="min-width: 0;">
-                                <p class="link-card-title">{link.title}</p>
-                                {#if link.description}
-                                    <p class="link-card-desc">{link.description}</p>
-                                {/if}
+                            <div class="card-body d-flex align-items-center justify-content-between gap-3 py-3 px-3">
+                                <div class="min-vw-0">
+                                    <p class="fw-semibold mb-0 text-body">{link.title}</p>
+                                    {#if link.description}
+                                        <p class="small text-secondary mb-0 mt-1">{link.description}</p>
+                                    {/if}
+                                </div>
+                                <i class="bi bi-box-arrow-up-right text-secondary flex-shrink-0"></i>
                             </div>
-                            <i class="bi bi-box-arrow-up-right link-card-arrow"></i>
                         </a>
                     {/each}
                 </div>
