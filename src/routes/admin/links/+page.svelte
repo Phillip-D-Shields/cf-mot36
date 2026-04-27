@@ -202,7 +202,7 @@
 					{/if}
 
 					<div class="mb-3">
-						<label class="form-label">Title</label>
+						<label for="title" class="form-label">Title</label>
 						<input
 							type="text"
 							class="form-control"
@@ -213,7 +213,7 @@
 					</div>
 
 					<div class="mb-3">
-						<label class="form-label">URL</label>
+						<label for="url" class="form-label">URL</label>
 						<input
 							type="url"
 							class="form-control"
@@ -225,7 +225,7 @@
 					</div>
 
 					<div class="mb-3">
-						<label class="form-label">Category</label>
+						<label for="category" class="form-label">Category</label>
 						<select class="form-select" name="category" bind:value={editingLink.category}>
 							{#each categories as cat}
 								<option value={cat}>{formatCategory(cat)}</option>
@@ -234,8 +234,8 @@
 					</div>
 
 					<div class="mb-3">
-						<label class="form-label"
-							>Description <span class="text-muted small">(Optional)</span></label
+						<label for="description" class="form-label">
+							Description <span class="text-muted small">(Optional)</span></label
 						>
 						<textarea
 							class="form-control"

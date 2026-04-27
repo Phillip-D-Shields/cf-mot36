@@ -24,8 +24,7 @@
                             class="form-control form-control-lg text-center fs-3 letter-spacing-lg" 
                             id="pin" 
                             name="pin" 
-                            required 
-                            autofocus
+                            required
                         >
                     </div>
                     

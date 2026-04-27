@@ -3,10 +3,20 @@
 	import 'bootstrap/dist/css/bootstrap.min.css';
 
 	onMount(async () => {
-		// We use a dynamic import here so it doesn't run during Server Side Rendering
 		await import('bootstrap/dist/js/bootstrap.bundle.min.js');
+
+		// Register service worker
+		if ('serviceWorker' in navigator) {
+			try {
+				const registration = await navigator.serviceWorker.register('/service-worker.js');
+				console.log('SW registered:', registration.scope);
+			} catch (err) {
+				console.log('SW registration failed:', err);
+			}
+		}
 	});
-	import favicon from '$lib/assets/favicon.svg';
+
+	import favicon from '$lib/assets/favicon.ico';
 
 	let { children } = $props();
 </script>

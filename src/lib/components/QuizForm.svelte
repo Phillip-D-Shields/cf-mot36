@@ -3,19 +3,20 @@
 
 	let { initialQuiz = {}, initialQuestions = [], isEdit = false } = $props();
 
+	const quiz = $state.snapshot(initialQuiz);
+	const questions = $state.snapshot(initialQuestions);
+
 	// Initialize state with passed data or fall back to defaults for creation
 	let formState = $state({
-		title: initialQuiz.title || '',
-		description: initialQuiz.description || '',
-		reference_url: initialQuiz.reference_url || '',
-		pass_threshold: initialQuiz.pass_threshold || 80,
+		title: quiz.title || '',
+		description: quiz.description || '',
+		reference_url: quiz.reference_url || '',
+		pass_threshold: quiz.pass_threshold || 80,
 		// Default to active for new quizzes, or check the database value (handling 1/0 or true/false)
 		is_active:
-			initialQuiz.is_active !== undefined
-				? initialQuiz.is_active === 1 || initialQuiz.is_active === true
-				: true,
-		questions: initialQuestions.length
-			? initialQuestions
+			quiz.is_active !== undefined ? quiz.is_active === 1 || quiz.is_active === true : true,
+		questions: questions.length
+			? questions
 			: ([] as Array<{
 					id: string;
 					text: string;
@@ -200,9 +201,10 @@
 					</div>
 
 					<div class="mb-3">
-						<label class="form-label small text-muted">Type</label>
+						<label class="form-label small text-muted" for="type-{qIndex}">Type</label>
 						<select
 							class="form-select form-select-sm w-auto"
+							id="type-{qIndex}"
 							bind:value={question.type}
 							onchange={() => handleTypeChange(question)}
 						>
@@ -216,23 +218,23 @@
 						{#if question.type === 'true_false'}
 							<div class="form-check">
 								<input
+									id="q{qIndex}-true"
 									class="form-check-input"
 									type="radio"
-									name={'q' + qIndex}
 									value="true"
 									bind:group={question.correctAnswer}
 								/>
-								<label class="form-check-label">True</label>
+								<label class="form-check-label" for="q{qIndex}-true">True</label>
 							</div>
 							<div class="form-check">
 								<input
+									id="q{qIndex}-false"
 									class="form-check-input"
 									type="radio"
-									name={'q' + qIndex}
 									value="false"
 									bind:group={question.correctAnswer}
 								/>
-								<label class="form-check-label">False</label>
+								<label class="form-check-label" for="q{qIndex}-false">False</label>
 							</div>
 						{:else}
 							{#each question.options as option, oIndex}
@@ -290,16 +292,26 @@
 			</button>
 		</div>
 	</form>
-    {#if toastMessage}
-        <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
-            <div class="toast align-items-center text-bg-{toastType} border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        {toastMessage}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" aria-label="Close" onclick={() => toastMessage = ''}></button>
-                </div>
-            </div>
-        </div>
-    {/if}
+	{#if toastMessage}
+		<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+			<div
+				class="toast align-items-center text-bg-{toastType} border-0 show"
+				role="alert"
+				aria-live="assertive"
+				aria-atomic="true"
+			>
+				<div class="d-flex">
+					<div class="toast-body">
+						{toastMessage}
+					</div>
+					<button
+						type="button"
+						class="btn-close btn-close-white me-2 m-auto"
+						aria-label="Close"
+						onclick={() => (toastMessage = '')}
+					></button>
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>

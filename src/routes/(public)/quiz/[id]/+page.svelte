@@ -6,7 +6,7 @@
     let questions = $derived(data.questions || []);
 
     let step = $state('intro');
-    let quizTitle = $state(quiz?.title || '');
+    let quizTitle = $derived(quiz?.title);
     let volunteerName = $state('');
     let brigadeId = $state('');
     let userAnswers = $state({});
