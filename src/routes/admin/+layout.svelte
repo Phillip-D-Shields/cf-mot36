@@ -35,7 +35,7 @@
 						class:active={page.url.pathname === '/admin/create'}
 						href="/admin/create"
 					>
-						+ Create Quiz
+						+ Quiz
 					</a>
 				</li>
 				<li class="nav-item">
@@ -54,6 +54,24 @@
 						href="/admin/links"
 					>
 						Directory
+					</a>
+				</li>
+				<li class="nav-item">
+					<a
+						class="nav-link"
+						class:active={page.url.pathname.startsWith('/admin/volunteers')}
+						href="/admin/volunteers"
+					>
+						Volunteers
+					</a>
+				</li>
+				<li class="nav-item">
+					<a
+						class="nav-link"
+						class:active={page.url.pathname.startsWith('/admin/vehicles')}
+						href="/admin/vehicles"
+					>
+						Vehicles
 					</a>
 				</li>
 			</ul>
