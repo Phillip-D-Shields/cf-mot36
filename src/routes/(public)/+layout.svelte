@@ -60,6 +60,7 @@
 					<a
 						class="nav-link"
 						href="/admin"
+                        data-sveltekit-reload
 					>
 						Admin
 					</a>
