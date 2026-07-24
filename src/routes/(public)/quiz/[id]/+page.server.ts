@@ -185,9 +185,7 @@ export const actions = {
                 await resend.emails.send({
                     from: 'brigade@digiwha-labs.com',
                     to: [
-                        "phillip.shields@fireandemergency.nz",
-                        "jessica.nelipovich@fireandemergency.nz",
-                        "kyle.silcock@fireandemergency.nz"
+                        "phillip.shields@fireandemergency.nz"
                     ],
                     subject: `New Quiz Submission: ${quiz_title} - ${volunteer_name} - ${score}%`,
                     html: generateEmailHtml(quiz_title, volunteer_name, brigade_id, score, passed === 1, gradedAnswers)
